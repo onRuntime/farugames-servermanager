@@ -1,10 +1,12 @@
-package net.faru.servers.database;
+package net.farugames.servermanager.database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class MySQLManager {
+import net.farugames.servermanager.Methods;
+
+public class Database {
 
 	private String urlBase;
 	private String host;
@@ -13,7 +15,7 @@ public class MySQLManager {
 	private String password;
 	private static Connection connection;
 
-	public MySQLManager(String urlBase, String host, String database, String username, String password) {
+	public Database(String urlBase, String host, String database, String username, String password) {
 		this.urlBase = urlBase;
 		this.host = host;
 		this.database = database;
@@ -27,9 +29,9 @@ public class MySQLManager {
 			try {
 				this.connection = DriverManager.getConnection(this.urlBase + this.host + "/" + this.database + "?autoReconnect=true",
 						this.username, this.password);
+				System.out.println(Methods.getPrefix() + "FaruGamesSM is connected to database.");
 				return;
 			} catch (SQLException e) {
-				System.out.println("Connection à la base de donées impossible.");
 				e.printStackTrace();
 				return;
 			}

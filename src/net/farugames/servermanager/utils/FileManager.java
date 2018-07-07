@@ -1,4 +1,4 @@
-package net.faru.servers.files;
+package net.farugames.servermanager.utils;
 
 import java.io.Closeable;
 import java.io.File;
