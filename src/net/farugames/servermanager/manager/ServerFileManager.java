@@ -1,15 +1,14 @@
 package net.farugames.servermanager.manager;
 
+import net.farugames.data.database.entities.ServerType;
+import net.farugames.servermanager.Methods;
+import net.farugames.servermanager.database.Servers;
+import net.farugames.servermanager.utils.FileManager;
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
-
-import org.apache.commons.io.FileUtils;
-
-import net.farugames.servermanager.Methods;
-import net.farugames.servermanager.ServerType;
-import net.farugames.servermanager.database.ServerSql;
-import net.farugames.servermanager.utils.FileManager;
 
 public class ServerFileManager {
 
@@ -32,7 +31,7 @@ public class ServerFileManager {
 		String sName = sResult.toString();
 		File sFolder = new File("servers/" + sResult);
 		
-		ServerSql.addServer(sName, "127.0.0.1", sPort, mode, "LOADING");
+		Servers.addServer(sName, "127.0.0.1", sPort, serverType, "LOADING", "CONSOLE");
 
 		File from = new File(serverType.getFolder());
 		File to = sFolder;
@@ -61,7 +60,7 @@ public class ServerFileManager {
 	public void deleteServer(String sName) {
 		File sFolder = new File("/home/minecraft/servers/" + sName);
 		System.out.println(Methods.getPrefix() + "Trying to delete sql line " + sName + "...");
-		ServerSql.deleteServer(sName);
+		Servers.deleteServer(sName);
 		System.out.println(Methods.getPrefix() + "Trying to quit screen " + sName + "...");
 		try {
 			
@@ -85,7 +84,7 @@ public class ServerFileManager {
 			portmin = 25001;
 			portmax = 25099;
 			randomport = r.nextInt(portmax-portmin) + portmin;
-			if(ServerSql.getServersPorts().toString().contains(String.valueOf(randomport))) {
+			if(Servers.getServersPorts().toString().contains(String.valueOf(randomport))) {
 				randomport = generatePort(serverType);
 			}
 			break;
@@ -93,7 +92,7 @@ public class ServerFileManager {
 			portmin = 25100;
 			portmax = 25199;
 			randomport = r.nextInt(portmax-portmin) + portmin;
-			if(ServerSql.getServersPorts().toString().contains(String.valueOf(randomport))) {
+			if(Servers.getServersPorts().toString().contains(String.valueOf(randomport))) {
 				randomport = generatePort(serverType);
 			}
 			break;
@@ -108,7 +107,7 @@ public class ServerFileManager {
 		switch (serverType) {
 			case HUB:
 				for(int i = 2; i < 100; i++) {
-				    if(!ServerSql.getServersNames().toString().contains(serverType.getName() + i)) {
+				    if(!Servers.getServersNames().toString().contains(serverType.getName() + i)) {
 				    	finalId = i;
 				        break;
 				    }
@@ -116,7 +115,7 @@ public class ServerFileManager {
 				break;
 			case BDB:
 				for(int i = 1; i < 100; i++) {
-				    if(!ServerSql.getServersNames().toString().contains(serverType.getName() + i)) {
+				    if(!Servers.getServersNames().toString().contains(serverType.getName() + i)) {
 				    	finalId = i;
 				        break;
 				    }

@@ -1,25 +1,29 @@
 package net.farugames.servermanager;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import net.farugames.data.database.entities.ServerType;
+import net.farugames.servermanager.database.Database;
+import net.farugames.servermanager.database.Servers;
+import net.farugames.servermanager.manager.ServerFileManager;
+
 import java.util.Timer;
 import java.util.TimerTask;
-
-import net.farugames.servermanager.database.Database;
-import net.farugames.servermanager.database.RequestedServerSql;
-import net.farugames.servermanager.database.ServerSql;
-import net.farugames.servermanager.manager.ServerFileManager;
 
 public class Main {
 
 	public static Database database;
+	
+	public static Gson getGson = new GsonBuilder().setPrettyPrinting().create();
 
 	public static void main(String[] args) {
 
 		System.out.println(Methods.getPrefix() + "The request server program has successfully started.");
-		database = new Database("jdbc:mysql://", "149.202.102.63", "farugames", "proxy", "HCK2u7a8Up4d");
-		database.connection();
 		
+		database = new Database("149.202.102.63","HCK2u7a8Up4d",6379);
+		database.connect();
 		
-		if(!ServerSql.getServersPorts().contains(25000)) {
+		if(!Servers.getServersPorts().contains(25000)) {
 			System.out.println(Methods.getPrefix() + "Generation of default hub server...");
 			ServerFileManager.getInstance().generateServer(ServerType.HUB, "DEFAULT");
 		}
@@ -27,15 +31,15 @@ public class Main {
 		new Timer().schedule(new TimerTask() {
 			public void run() {
 				System.out.println(Methods.getPrefix() + "Check delete statuts servers on the database.");
-				if (ServerSql.getStatutDelete().size() >= 1) {
-					ServerFileManager.getInstance().deleteServer(ServerSql.getStatutDelete().get(0));
+				if (Servers.getStatutDelete().size() >= 1) {
+					ServerFileManager.getInstance().deleteServer(Servers.getStatutDelete().get(0));
 				} else {
 					System.out.println(Methods.getPrefix() + "There isn't delete statuts servers.");
 				}
 				
 				System.out.println(Methods.getPrefix() + "Check requested servers on the database.");
-				if (RequestedServerSql.getServers().size() >= 1) {
-					switch (RequestedServerSql.getServers().get(0)) {
+				if (Servers.getAllRequestedServers().size() >= 1) {
+					switch (Servers.getAllRequestedServers().get(0)) {
 					case HUB:
 						ServerFileManager.getInstance().generateServer(ServerType.HUB, "random");
 						break;
@@ -45,7 +49,7 @@ public class Main {
 					default:
 						break;
 					}
-					RequestedServerSql.removeLastRequested();
+					Servers.removeLastRequest();
 				} else {
 					System.out.println(Methods.getPrefix() + "There isn't requested server.");
 				}

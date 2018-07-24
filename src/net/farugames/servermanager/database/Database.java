@@ -1,70 +1,49 @@
 package net.farugames.servermanager.database;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
 import net.farugames.servermanager.Methods;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 public class Database {
+	private final String host, password;
+	private final int port;
 
-	private String urlBase;
-	private String host;
-	private String database;
-	private String username;
-	private String password;
-	private static Connection connection;
-
-	public Database(String urlBase, String host, String database, String username, String password) {
-		this.urlBase = urlBase;
+	private JedisPool jedisPool;
+	
+	public Database(String host, String password, int port) {
 		this.host = host;
-		this.database = database;
-		this.username = username;
 		this.password = password;
+		this.port = port;
 	}
-
-	@SuppressWarnings("static-access")
-	public void connection() {
-		if (!isConnected()) {
-			try {
-				this.connection = DriverManager.getConnection(this.urlBase + this.host + "/" + this.database + "?autoReconnect=true",
-						this.username, this.password);
-				System.out.println(Methods.getPrefix() + "FaruGamesSM is connected to database.");
-				return;
-			} catch (SQLException e) {
-				e.printStackTrace();
-				return;
-			}
+	public void connect() {
+		ClassLoader previous = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(Jedis.class.getClassLoader());
+		JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+		jedisPool = new JedisPool(jedisPoolConfig, host, port, 3000, password);
+		Thread.currentThread().setContextClassLoader(previous);
+		try (Jedis jedisConnect = jedisPool.getResource()) {
+			System.out.println(Methods.getPrefix() + "FaruGamesSM is connected to database.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
 		}
 	}
-
-	@SuppressWarnings("static-access")
-	public void deconnection() {
-		if (isConnected()) {
-			try {
-				this.connection.close();
-				return;
-			} catch (SQLException e) {
-				System.out.println("Deconnection à la base de donées impossible.");
-				return;
-			}
-		}
-	}
-
-	@SuppressWarnings("static-access")
-	public boolean isConnected() {
+	
+	public void disconnect() {
 		try {
-			if ((this.connection == null) || (this.connection.isClosed()) || (this.connection.isValid(5))) {
-				return false;
-			}
-			return true;
-		} catch (SQLException e) {
-			System.out.println("isConnected class Database erronee");
+			jedisPool.close();
+			return;
+		} catch (Exception e) {
+			System.out.println("Deconnection à la base de donées impossible.");
+			return;
 		}
-		return false;
 	}
-
-	public static Connection getConnection() {
-		return connection;
+	
+	public JedisPool getJedisPool() {
+		return jedisPool;
+	}
+	public Jedis getJedis() {
+		return jedisPool.getResource();
 	}
 }
