@@ -1,59 +1,74 @@
 package net.farugames.servermanager;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.farugames.data.database.entities.ServerType;
-import net.farugames.servermanager.database.Database;
-import net.farugames.servermanager.database.Servers;
-import net.farugames.servermanager.manager.ServerFileManager;
-
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
+
+import net.farugames.api.core.server.ServerStatus;
+import net.farugames.api.core.server.ServerType;
+import net.farugames.database.IRequestedServers;
+import net.farugames.database.redis.RedisManager;
+import net.farugames.database.redis.servers.IServer;
+import net.farugames.servermanager.manager.ServersManager;
+import net.farugames.servermanager.runnables.RequestedServerRunnable;
 
 public class Main {
 
-	public static Database database;
-	
-	public static Gson getGson = new GsonBuilder().setPrettyPrinting().create();
+	public static RedisManager redisManager;
 
 	public static void main(String[] args) {
 
-		System.out.println(Methods.getPrefix() + "The request server program has successfully started.");
-		
-		database = new Database("149.202.102.63","HCK2u7a8Up4d",6379);
-		database.connect();
-		
-		if(!Servers.getServersPorts().contains(25000)) {
-			System.out.println(Methods.getPrefix() + "Generation of default hub server...");
-			ServerFileManager.getInstance().generateServer(ServerType.HUB, "DEFAULT");
+		redisManager = new RedisManager("149.202.102.63", "b4z5MT4Nk6hA", 6379);
+		redisManager.connect();
+
+		new Timer().schedule(new RequestedServerRunnable(), 0, 1000);
+	}
+
+	public static void checkDeletedServers(ServerType serverType) {
+		System.out.println(Methods.getPrefix() + "Check deleted servers on the database.");
+		List<String> serversNameList = IServer.getServersNameList();
+		if (serversNameList.get(0) == null) {
+			return;
 		}
-		
-		new Timer().schedule(new TimerTask() {
-			public void run() {
-				System.out.println(Methods.getPrefix() + "Check delete statuts servers on the database.");
-				if (Servers.getStatutDelete().size() >= 1) {
-					ServerFileManager.getInstance().deleteServer(Servers.getStatutDelete().get(0));
-				} else {
-					System.out.println(Methods.getPrefix() + "There isn't delete statuts servers.");
-				}
-				
-				System.out.println(Methods.getPrefix() + "Check requested servers on the database.");
-				if (Servers.getAllRequestedServers().size() >= 1) {
-					switch (Servers.getAllRequestedServers().get(0)) {
-					case HUB:
-						ServerFileManager.getInstance().generateServer(ServerType.HUB, "random");
-						break;
-					case BDB:
-						ServerFileManager.getInstance().generateServer(ServerType.BDB, "random");
-						break;
-					default:
-						break;
-					}
-					Servers.removeLastRequest();
-				} else {
-					System.out.println(Methods.getPrefix() + "There isn't requested server.");
-				}
+		for (int i = 0; i < serversNameList.size(); i++) {
+			// Faudra trouver une solution plus simple car ca risque de prendre pas mal de
+			// temps au bout d'une cinquantaine de serv
+			if(IServer.getStatus(serversNameList.get(i)) == ServerStatus.DELETE) {
+				ServersManager.getInstance().deleteServer(serversNameList.get(i));
 			}
-		}, 0, 1000);
+		}
+	}
+
+	public static void checkAvailableServers(ServerType serverType) {
+		System.out.println(Methods.getPrefix() + "Check if servers are available.");
+		if (!IServer.getServersNameList().toString().contains(serverType.toString().toLowerCase())) {
+			IServer.request(serverType);
+		}
+	}
+
+	public static void checkRequestedServers(ServerType serverType) {
+		System.out.println(Methods.getPrefix() + "Check requested servers on the database.");
+		List<String> requestedHostList = IRequestedServers.getRequestedHostList(serverType);
+		List<String> requestedMapList = IRequestedServers.getRequestedMapList(serverType);
+		if (requestedHostList.size() >= 1 && IRequestedServers.getRequestedMapList(serverType).size() >= 1) {
+			String host = requestedHostList.get(0);
+			String map = requestedMapList.get(0);
+			ServersManager.getInstance().generateServer(serverType, host, map);
+			IRequestedServers.removeLastRequested(serverType, host, map);
+		} else {
+			System.out.println(Methods.getPrefix() + "There isn't requested server.");
+		}
+	}
+
+	public static String getIp() {
+		String ip = "127.0.0.1";
+		try (final DatagramSocket socket = new DatagramSocket()) {
+			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			ip = socket.getLocalAddress().getHostAddress();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ip;
 	}
 }
