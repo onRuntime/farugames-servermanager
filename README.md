@@ -2,14 +2,10 @@
 
 ## FaruGames - FaruGamesServerManager
 
-Ce projet est privé, nous nous engageons à lancer des pousuites judiciaires pour les personnes copiant celui-ci sans autorisations des propriétaires de [**farugames.net**](http://farugames.net).
-
-------------------------------------
-
 - Nom : FaruGamesServerManager
 - Type : Infrastructure
 - Etat : Progression continuelle
-- Développeur(s) : 3DX900, ChocoIG
+- DÃ©veloppeur(s) : 3DX900, ChocoIG
 
 ## Description
 FaruGamesServerManager.
